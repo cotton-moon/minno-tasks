@@ -1,74 +1,83 @@
-
+/**
+ * The scorer scores IATs and similar tasks.
+ * 
+ * There are some technical issues here related to how classes can work on client-side within Minno. 
+ * This is why we have the scorer_init function and we get an object from the user to assign functions into it.
+ * 
+ **/
 function scorer_init(scorerObj) {
     scorerObj.computeData = {}; //Will hold the to-be-scored data 
-    scorerObj.msg = {}; //Will hold the feedback message
-    scorerObj.parcelCalc = {}; //An object that computes the D score
+    scorerObj.scorer = {}; //An object that computes the D score
 
     scorerObj.computeData = new ComputeData();
-    scorerObj.msg = new msgMan();
-    scorerObj.parcelCalc  = new parcelCalc(scorerObj.msg);
+    scorerObj.scorer  = new scorer();
 
     //The two API functions
-    scorerObj.addSettings  = scorer_addSettings;
+    scorerObj.addSettings = scorer_addSettings;
     scorerObj.computeD = scorer_computeD;
 }
 
 
 // add settings different from default
-function scorer_addSettings(scorerObj, type, settingsObj){
-    switch (type){
-        case 'compute':
-            scorerObj.computeData.setComputeObject(settingsObj);
-            break;
-        case 'message':
-            scorerObj.msg.setMsgObject(settingsObj);
-            break;
-        default:
-            throw new Error('SCORER:addSettings: unknown "type" ' + type);
-    }
+function scorer_addSettings(scorerObj, settingsObj){
+    scorerObj.computeData.setComputeObject(settingsObj);
 }
 
 
 /**
  * Calculate the score
- * @return an object that holds the score and an error message
+ * @return an object with the score, the valid score, error-rate, fast-responses-rate, and number of scores trials.
  **/
 function scorer_computeD(scorerObj){
 
     //Get the needed objects from the scorer object
     let computeData = scorerObj.computeData;
-    let parcel = scorerObj.parcelCalc;
+    let scorer = scorerObj.scorer;
 
     try 
     {
         // Copy the data from the input scorer object to our internal object. 
         computeData.setDataArray(scorerObj);
         // Prepare the data for the scoring
-        parcel.setParcelObject(computeData);
-        // And not we score
-        parcel.scoreAll(computeData);
+        scorer.prepareScorerData(computeData);
+        // And now we score
+        scorer.scoreAll(computeData);
     } catch (error) {
-        console.error("computeD: error message: ", error.message)
+        console.error("computeD: error message: ", error.message);
     }
 
     // The output, end-result of the scoring is "scoreData"
-    const scoreObj = parcel.scoreData;
+    const scoreObj = scorer.scoreData;
 
-    if (scoreObj.errorMessage === undefined || scoreObj.errorMessage === null){
-        console.log('No error message, so setting a score and feedback message');
-        return {
-            FBMsg : scorerObj.msg.getScoreMsg(scoreObj.score),
-            DScore : scoreObj.score,
-            error: false
-        };
-    }else{
-        console.log('The error message will be ', scoreObj.errorMessage);
-        return {
-            FBMsg : scoreObj.errorMessage,
-            DScore : scoreObj.score,
-            error: true
-        };
+    //// Determine whether the score is valid
+
+    if (scoreObj.totalScoredTrials === undefined || 
+        scoreObj.totalScoredTrials < computeData.minScoredTrials || 
+        scoreObj.score === undefined || 
+        scoreObj.score === null)
+    {
+        scoreObj.invalid = "not enough";
     }
+    else if (
+        scoreObj.errRate === undefined || 
+        scoreObj.errRate > computeData.maxErrorRate)
+    {
+        scoreObj.invalid = "too many errors";
+    }
+    else if (
+        scoreObj.fastRate === undefined || 
+        scoreObj.fastRate > computeData.maxFastTrialsRate)
+    {
+        scoreObj.invalid = "too fast";
+    }
+
+    return({
+        D : scoreObj.score, 
+        DValid: scoreObj.invalid !== undefined ? "" : scoreObj.score, 
+        errRate:scoreObj.errRate, 
+        fastRate:scoreObj.fastRate, 
+        totalScoredTrials:scoreObj.totalScoredTrials
+    });
 }
 
 // A class with all the data and parameters needed for computing the score
@@ -120,73 +129,20 @@ class ComputeData{
         // Replace the original dataArray with the filtered data
         this.dataArray = filteredDataArray;
 
-        console.log('Data array length: ', this.dataArray.length);
+        //console.log('Data array length: ', this.dataArray.length);
     }
 
-}
-
-// A class to handle the feedback message
-class msgMan{
-
-    constructor() {
-        this.messages = {
-            // These are the defaults and they are supposed to be overridden by the user
-            MessageDef: [],
-            manyErrors: "There were too many errors made to determine a result.",
-            tooFast: "There were too many fast trials to determine a result.",
-            notEnough: "There were not enough trials to determine a result."
-        };
-    }
-
-    setMsgObject(settingsObj){
-        // Loop through the keys of the updateObject
-        for (const key in settingsObj) {
-            // Check if the key exists in the messages object
-            if (this.messages.hasOwnProperty(key)) {
-                // Update the field with the value from the updateObject
-                this.messages[key] = settingsObj[key];
-            }
-        }
-    }
-
-    getScoreMsg(score) {
-        const array = this.messages.MessageDef;
-        const scoreNum = parseFloat(score);
-        let rightMsg = "error: msg was not set";
-        let set = false;
-
-        // Find the first element in the array where the score is less than or equal to the cut value
-        for (const val of array) {
-            const cut = parseFloat(val.cut);
-            const msg = val.message;
-
-            if (scoreNum <= cut && !set) {
-                rightMsg = msg;
-                set = true;
-                break; // Exit the loop once a match is found
-            }
-        }
-
-        // If no match is found, use the last message in the array
-        if (!set) {
-            const obj = array[array.length - 1];
-            rightMsg = obj.message;
-        }
-
-        return rightMsg;
-    }
 }
 
 // A class for computing the D score for each parcel.
-class parcelCalc {
+class scorer {
 
-    constructor(msgMan) {
+    constructor() {
         this.parcelArray = [];  // Holds an array of parcel objects
         this.scoreData = {};    // Holds score and error messages
-        this.msg = msgMan;
     }
 
-    //Parcel is the basic object that holds the data for each parcel, separated by conditions.
+    //Parcel is the basic object that holds the data for each parcel, sotred by conditions.
     createParcel(name, cond1VarValues, cond2VarValues) {
         return {
             name: name,
@@ -200,16 +156,13 @@ class parcelCalc {
             }
         };
     }
-
-    // settingsObj is type ComputeData
-    // Method: Void setObjectFields
-    // Input: Uses logs from API
-    // Output: Sets parcelArray with array of type parcel
-    // Description: Init goes over the log and creates an array of object of type Parcel according to
-    // the parcelValues array in computeData. Each parcel object holds relevant information regarding the
-    // parcel including an array of trials with the relevant parcel name.
-
-    setParcelObject(computeData) {
+    
+    // Prepare the data for the scoring
+    // This function: 
+    // (1) Goes over all the trials, 
+    // (2) Copies the relevant data from the relevant trials to the appropriate parcel and pairing condition
+    // (3) Computes variables such as the error-rate and fast-trial-rate.
+    prepareScorerData(computeData) {
         // set counters
         let totalScoredTrials = 0;
         let trialsUnder = 0;
@@ -254,33 +207,23 @@ class parcelCalc {
         }
         
         //// Make sure that the data are good for scoring.
+        //console.log('totalErrorTrials=' + totalErrorTrials + ' totalTrials=' + totalTrials + ' computeData.maxErrorRate='+ computeData.maxErrorRate);
+        //console.log('trialsUnder=' + trialsUnder + ' totalScoredTrials=' + totalScoredTrials + ' computeData.maxFastTrialsRate='+ computeData.maxFastTrialsRate);
+        
+        this.scoreData.errRate = totalErrorTrials / totalTrials;
+        this.scoreData.fastRate = trialsUnder / totalScoredTrials;
+        this.scoreData.totalScoredTrials = totalScoredTrials;
         
         if (totalTrials < 1)
         {
-            this.scoreData.errorMessage = this.msg.messages['notEnough'];
+            this.scoreData.invalid = 'notEnough';
             throw new Error('Not enough trials in this task.');
         }
 
-        if (totalScoredTrials < 4) // For two conditions, we need a minimum of 2 trials within each condition. So, let's than 4 is definitely not enough.
-        {
-            this.scoreData.errorMessage = this.msg.messages['notEnough'];
+        if (totalScoredTrials < 4) 
+        {// For two conditions, we need a minimum of 2 trials within each condition. So, less than 4 is definitely not enough.
+            this.scoreData.invalid = 'notEnough';
             throw new Error('Not enough to-be-scored trials in this task.');
-        }
-
-        //Update the error message component, if there are too many errors.
-        console.log('totalErrorTrials=' + totalErrorTrials + ' totalTrials=' + totalTrials + ' computeData.maxErrorRate='+ computeData.maxErrorRate);
-        if (totalErrorTrials / totalTrials > computeData.maxErrorRate) {
-            this.scoreData.errorMessage = this.msg.messages['manyErrors'];
-            //YBYB: There will be an error message, but we will still try to compute a D score.
-            //throw new Error('too many errors in the to-be-scored trials.');
-        }
-
-        // Check if the rate of fast trials is too high
-        console.log('trialsUnder=' + trialsUnder + ' totalScoredTrials=' + totalScoredTrials + ' computeData.maxFastTrialsRate='+ computeData.maxFastTrialsRate);
-        if ((trialsUnder / totalScoredTrials) > computeData.maxFastTrialsRate) {
-            this.scoreData.errorMessage = this.msg.messages['tooFast'];
-            //YBYB: There will be an error message, but we will still try to compute a D score.
-            //throw new Error('too many fast trials in a parcel.');
         }
     }
 
@@ -291,7 +234,6 @@ class parcelCalc {
         would be added to the parcel trial array. if set to false trials that are error would not be added,
         if set to panelty error trials will be added and later panelized.
     */
-
     addTrialIfValid(p, value, computeData) {
         let currCond = value.data.condition;
         
@@ -310,15 +252,23 @@ class parcelCalc {
                 p.cond2.scoredData.push(value);
             } else {
                 console.log('This trial condition is not included in any of the relevant conditions: ' + currCond);
+                return false;
             }
             return true;
         } else if (computeData.errorLatency.use === 'false' && value.data[computeData.errorVar] === 1) {
             return false;
         } else {
             //print error because this unexpected 
-            console.log('Error: unexpected errorLatency parameter=' + computeData.errorLatency.use + " or error value=" + value.data[computeData.errorVar]);
+            throw new Error('Error: unexpected errorLatency parameter=' + computeData.errorLatency.use + " or error value=" + value.data[computeData.errorVar]);
+            //console.log('Error: unexpected errorLatency parameter=' + computeData.errorLatency.use + " or error value=" + value.data[computeData.errorVar]);
         }
+        //console.log('Error in addTrialIfValid: Not supposed to reach this point.');
+        throw new Error('Error in addTrialIfValid: Not supposed to reach this point.');
     }
+
+    /*
+        A few helper functions for computing the score.
+    */
 
     // calcMean
     // Input: array of trials
@@ -349,6 +299,7 @@ class parcelCalc {
     // It is used to calculate the mean of the correct-response trials for each condition.
     calcCorrectMeans(parcel, computeData) {
         let conditions = [parcel.cond1, parcel.cond2];
+        /** YBYB: We are not using throw here, only console.log because the user might allow scoring without correct data at all **/
         for (const currCond of conditions) {
             if (!currCond.correctData) {
                 console.log('calCorrectMeans: there was no correctData.');
@@ -361,31 +312,11 @@ class parcelCalc {
                 return false;
             }
             currCond.correctTrialsMean = this.calcMean(condTrials, computeData);
-            console.log('correctTrialsMean for ', currCond.cond, currCond.correctTrialsMean);
+            //console.log('correctTrialsMean for ', currCond.cond, currCond.correctTrialsMean);
         }
     }
 
-    // calcPooledSD
-    // Input: parcel object
-    // Output: pooled standard deviation of the corrected data, across all conditions
-    // Description: Helper method to compute the pooled standard deviation of the corrected data.
-    calcPooledSD(parcel, computeData) {
-        let conditions = [parcel.cond1, parcel.cond2];
-        let relevantTrials = [];
-        // The relevant trials are all the to-be-scored trials in the parcel, excluding error-response trials if useForSTD is false.
-        for (const currCond of conditions) {
-            if (computeData.errorLatency.useForSTD === false) {
-                relevantTrials = relevantTrials.concat(currCond.correctData);
-            }
-            else if (computeData.errorLatency.useForSTD === true) {
-                relevantTrials = relevantTrials.concat(currCond.correctedData);
-            }
-        }
-        console.log('calcPooledSD: relevantTrials', relevantTrials);
-        return this.calcSD(relevantTrials, computeData);
-    }
-
-    // calcCorrectedMeans
+   // calcCorrectedMeans
     // Input: parcel object
     // Output: mean of each condition
     // Description: Helper method to compute the mean of each condition.
@@ -399,7 +330,7 @@ class parcelCalc {
 
             let condTrials = currCond.correctedData;
             currCond.correctedTrialsMean = this.calcMean(condTrials, computeData);
-            console.log('correctedTrialsMean for ', currCond.cond, currCond.correctedTrialsMean);
+            //console.log('correctedTrialsMean for ', currCond.cond, currCond.correctedTrialsMean);
         }
     }
 
@@ -421,7 +352,7 @@ class parcelCalc {
             {
                 throw new Error("setCorrectData: No correct-response trials for one of the conditions in this parcel");
             }
-            console.log('correctData for ', currCond, currCond.correctData);
+            //console.log('correctData for ', currCond, currCond.correctData);
         }
     }
 
@@ -469,10 +400,30 @@ class parcelCalc {
                 });
             }
         }
-        console.log('correctedData for ', parcel.cond1.cond, parcel.cond1.correctedData);
+        //console.log('correctedData for ', parcel.cond1.cond, parcel.cond1.correctedData);
     }
 
-    // Score one parcel
+    // calcPooledSD
+    // Input: parcel object
+    // Output: pooled standard deviation of the corrected data, across all conditions
+    // Description: Helper method to compute the pooled standard deviation of the corrected data.
+    calcPooledSD(parcel, computeData) {
+        let conditions = [parcel.cond1, parcel.cond2];
+        let relevantTrials = [];
+        // The relevant trials are all the to-be-scored trials in the parcel, excluding error-response trials if useForSTD is false.
+        for (const currCond of conditions) {
+            if (computeData.errorLatency.useForSTD === false) {
+                relevantTrials = relevantTrials.concat(currCond.correctData);
+            }
+            else if (computeData.errorLatency.useForSTD === true) {
+                relevantTrials = relevantTrials.concat(currCond.correctedData);
+            }
+        }
+        //console.log('calcPooledSD: relevantTrials', relevantTrials);
+        return this.calcSD(relevantTrials, computeData);
+    }
+
+     // Score one parcel
     scoreParcel(parcel, computeData){
 
         // Set correct data (trials with correct response), within each condition
@@ -488,17 +439,17 @@ class parcelCalc {
         let pooledSD = this.calcPooledSD(parcel, computeData);
 
         if (isNaN(pooledSD) || pooledSD === 0) {
-            this.scoreData.errorMessage = this.msg.messages['notEnough'];
+            this.scoreData.invalid = 'notEnough';
             throw new Error('scoreParcel: not enough trials for computing pooledSD');
         }
-        console.log('pooledSD', pooledSD);
+        //console.log('pooledSD', pooledSD);
 
         const diff = parcel.cond2.correctedTrialsMean - parcel.cond1.correctedTrialsMean;
-        console.log('diff', diff);
+        //console.log('diff', diff);
 
         // divide diff by pooled SD
         const parcelDScore = diff / pooledSD;
-        console.log('parcelDScore', parcelDScore);
+        //console.log('parcelDScore', parcelDScore);
 
         return(parcelDScore)
     }
@@ -525,7 +476,6 @@ class parcelCalc {
             this.scoreData.score = finalDScore.toFixed(2);
         }
     }
-
 }
 
 
