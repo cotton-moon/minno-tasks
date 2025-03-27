@@ -1,4 +1,3 @@
-//define(['pipAPI','https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/scorer/nogaScorer.js','underscore'], function(APIConstructor, Scorer, _) {
 define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/scorer/nogaScorer.js', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/scorer/feedbacker.js', 'underscore'], function(APIConstructor, Scorer, Feedbacker, _) {
 //define(['pipAPI','/implicit/user/yba/testNewScorer/nogaScorer.js','/implicit/user/yba/testNewScorer/feedbacker.js','underscore'], function(APIConstructor, Scorer, Feedbacker, _) {
 
@@ -351,7 +350,7 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/scorer/no
 			minRT : 400, //Delete trials below this latency
 			maxRT : 10000, //Delete trials above this
 			errorScoring : 'latency', //How to score error trials? 'latency' mean by their latency, and 'penalty' (mean of correct trials + 600)
-			maxErrorRateFB : 0.4, // The maximum error-rate in the critical blocks for allowing a feedback message.
+			maxErrorRateFB : 0.4, // The maximum error-rate in the critical blocks for allow a feedback message.
 			maxFastTrialsRateFB : 0.1, //Above this % of extremely fast responses within a condition, the participant is considered too fast for a feedback message.
 			minTotalScoredTrialsFB : 4 //Below this number of total scored trials, there are not enough trials to allow a feedback message.
 		};
@@ -412,12 +411,16 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/scorer/no
 					//console.log("DScoreObj.FBMsg:", DScoreObj.FBMsg);
 					piCurrent.d = DScoreObj.D; 
 					//console.log("feedback:", piCurrent.feedback);
-					API.save({
-					    block3Cond:block3Cond, feedback:piCurrent.feedback, 
-					    d: DScoreObj.D, dValid:DScoreObj.DValid, 
-					    errRate:DScoreObj.errRate, fastRate:DScoreObj.fastRate, 
-					    nScoredTrials:DScoreObj.totalScoredTrials});
-				}
+                    API.save({
+                        block3Cond: block3Cond || "",
+                        feedback: piCurrent.feedback || "",
+                        d: DScoreObj.D || "",
+                        dValid: DScoreObj.DValid || "",
+                        errRate: DScoreObj.errRate || "",
+                        fastRate: DScoreObj.fastRate || "",
+                        nScoredTrials: DScoreObj.totalScoredTrials || ""
+                    });
+                }
 			});
 		/**
 		 * Create default sorting trial
@@ -1262,6 +1265,7 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/scorer/no
 
 	return iatExtension;
 });
+
 
 
 

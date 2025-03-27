@@ -25,23 +25,16 @@ function feedbacker_getFeedback(feedbackerObj){
     //console.log('in getFeedback, DScoreObject', feedbackerObj.DScoreObj);
     //console.log('in getFeedback, feedbackerObj.fb', feedbackerObj.fb);
 
-    if (feedbackerObj.DScoreObj.D === undefined || 
-        feedbackerObj.DScoreObj.D === null)
-    {
-        return(feedbackerObj.fb.err);
-    }
-    else if (
-        feedbackerObj.DScoreObj.totalScoredTrials < feedbackerObj.fb.minTotalScoredTrials)
-    {
-        return(feedbackerObj.fb.notEnough);
-    }
-    else if (feedbackerObj.DScoreObj.fastRate > feedbackerObj.fb.maxFastTrialsRate)
-    {
-        return(feedbackerObj.fb.tooFast);
-    }
-    else if (feedbackerObj.DScoreObj.errRate > feedbackerObj.fb.maxErrorRate)
-    {
-        return(feedbackerObj.fb.manyErrors);
+    let defaultErrMessage = "There was an error computing your score";
+
+    if ((feedbackerObj.DScoreObj?.totalScoredTrials ?? 0) < (feedbackerObj.fb?.minTotalScoredTrials ?? 0)) {
+        return feedbackerObj.fb?.notEnough ?? defaultErrMessage;
+    } else if ((feedbackerObj.DScoreObj?.fastRate ?? 0) > (feedbackerObj.fb?.maxFastTrialsRate ?? 0)) {
+        return feedbackerObj.fb?.tooFast ?? defaultErrMessage;
+    } else if ((feedbackerObj.DScoreObj?.errRate ?? 0) > (feedbackerObj.fb?.maxErrorRate ?? 0)) {
+        return feedbackerObj.fb?.manyErrors ?? defaultErrMessage;
+    } else if (feedbackerObj.DScoreObj?.D === undefined || feedbackerObj.DScoreObj?.D === null) {
+        return feedbackerObj.fb?.err ?? defaultErrMessage;
     }
     
     return feedbackerObj.fb.getScoreMsg(feedbackerObj.DScoreObj.D);
@@ -105,5 +98,6 @@ class feedbacker{
         return rightMsg;
     }
 }
+
 
 
