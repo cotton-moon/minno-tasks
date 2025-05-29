@@ -411,14 +411,16 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/scorer/no
 					//console.log("DScoreObj.FBMsg:", DScoreObj.FBMsg);
 					piCurrent.d = DScoreObj.D; 
 					//console.log("feedback:", piCurrent.feedback);
+					const myClean = val => (val === null || val === undefined || Number.isNaN(val)) ? "" : val;
+
                     API.save({
-                        block3Cond: block3Cond || "",
-                        feedback: piCurrent.feedback || "",
-                        d: DScoreObj.D || "",
-                        dValid: DScoreObj.DValid || "",
-                        errRate: DScoreObj.errRate || "",
-                        fastRate: DScoreObj.fastRate || "",
-                        nScoredTrials: DScoreObj.totalScoredTrials || ""
+                        block3Cond: myClean(block3Cond),
+                        feedback: myClean(piCurrent.feedback),
+                        d: myClean(DScoreObj.D),
+                        dValid: myClean(DScoreObj.DValid),
+                        errRate: myClean(DScoreObj.errRate),
+                        fastRate: myClean(DScoreObj.fastRate),
+                        nScoredTrials: myClean(DScoreObj.totalScoredTrials)
                     });
                 }
 			});

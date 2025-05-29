@@ -211,7 +211,7 @@ class scorer {
         //console.log('trialsUnder=' + trialsUnder + ' totalScoredTrials=' + totalScoredTrials + ' computeData.maxFastTrialsRate='+ computeData.maxFastTrialsRate);
         
         this.scoreData.errRate = totalErrorTrials / totalTrials;
-        this.scoreData.fastRate = trialsUnder / totalScoredTrials;
+        this.scoreData.fastRate = trialsUnder / totalTrials;
         this.scoreData.totalScoredTrials = totalScoredTrials;
         
         if (totalTrials < 1)
