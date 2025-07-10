@@ -79,7 +79,7 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/qualt
 		},
 
 		base_url : {//Where are your images at?
-			image : 'https://cotton-moon.github.io/minno-tasks/IAT/qualtrics/OneDrive_1_10-07-2025'
+			image : 'https://github.com/cotton-moon/minno-tasks/tree/master/IAT/qualtrics/OneDrive_1_10-07-2025'
 		} 
 	});
 });
