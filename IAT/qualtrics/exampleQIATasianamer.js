@@ -41,38 +41,38 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/qualt
 		},
 		attribute1 :
 		{
-			name : 'Foreign',
+			name : 'Inactive',
 			title : {
-				media : {word : 'Foreign'},
+				media : {word : 'Inactive'},
 				css : {color:'#0000FF','font-size':'1.8em'},
 				height : 4 //Used to position the "Or" in the combined block.
 			},
 			stimulusMedia : [ //Stimuli content as PIP's media objects
-            {image: 'FOR002.jpg'},
-            {image: 'FOR003.jpg'},
-            {image: 'FOR006.jpg'},
-            {image: 'FOR001.jpg'},
-            {image: 'FOR004.jpg'},
-            {image: 'FOR005.jpg'}
+            {word: 'forgetful'},
+            {word: 'lethargic'},
+            {word: 'slow'},
+            {word: 'tired'},
+            {word: 'weak'},
+            {word: 'weary'}
 			],
 			//Stimulus css
 			stimulusCss : {color:'#0000FF','font-size':'2.3em'}
 		},
 		attribute2 :
 		{
-			name : 'American',
+			name : 'Active',
 			title : {
-				media : {word : 'American'},
+				media : {word : 'Active'},
 				css : {color:'#0000FF','font-size':'1.8em'},
 				height : 4 //Used to position the "Or" in the combined block.
 			},
 			stimulusMedia : [ //Stimuli content as PIP's media objects
-            {image: 'AME009.jpg'},
-            {image: 'AME0016.jpg'},
-            {image: 'AME006.jpg'},
-            {image: 'AME0012.jpg'},
-            {image: 'AME003.jpg'},
-            {image: 'AME002.jpg'}
+            {word: 'dynamic'},
+            {word: 'energetic'},
+            {word: 'fast'},
+            {word: 'lively'},
+            {word: 'quick'},
+            {word: 'strong'}
 			],
 			//Stimulus css
 			stimulusCss : {color:'#0000FF','font-size':'2.3em'}
