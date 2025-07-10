@@ -4,37 +4,37 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/qualt
 	return iatExtension({
 
 		category1 : {
-			name : 'Asian American', //Will appear in the data.
+			name : 'Old', //Will appear in the data.
 			title : {
-				media : {word : 'Asian American'}, //Name of the category presented in the task.
+				media : {word : 'Old'}, //Name of the category presented in the task.
 				css : {color:'#31940F','font-size':'1.8em'}, //Style of the category title.
 				height : 4 //Used to position the "Or" in the combined block.
 			}, 
 			stimulusMedia : [ //Stimuli content as PIP's media objects
-            {image: 'AFE851.jpg'},
-            {image: 'AFE831.jpg'},
-            {image: 'AFE811.jpg'},
-            {image: 'AME871.jpg'},
-            {image: 'AME831.jpg'},
-            {image: 'AME821.jpg'}
+            {image: 'old1.bmp'},
+            {image: 'old2.bmp'},
+            {image: 'old3.bmp'},
+            {image: 'old4.bmp'},
+            {image: 'old5.bmp'},
+            {image: 'old6.bmp'}
 			], 
 			//Stimulus css (style)
 			stimulusCss : {color:'#31940F','font-size':'1.8em'}
 		},	
 		category2 :	{
-			name : 'European American', //Will appear in the data.
+			name : 'Young', //Will appear in the data.
 			title : {
-				media : {word : 'European American'}, //Name of the category presented in the task.
+				media : {word : 'Young'}, //Name of the category presented in the task.
 				css : {color:'#31940F','font-size':'1.8em'}, //Style of the category title.
 				height : 4 //Used to position the "Or" in the combined block.
 			}, 
 			stimulusMedia : [ //Stimuli content as PIP's media objects
-            {image: 'AME041.jpg'},
-            {image: 'AME011.jpg'},
-            {image: 'AME021.jpg'},
-            {image: 'AFE021.jpg'},
-            {image: 'AFE071.jpg'},
-            {image: 'AFE081.jpg'},
+            {image: 'young1.bmp'},
+            {image: 'young2.bmp'},
+            {image: 'young3.bmp'},
+            {image: 'young4.bmp'},
+            {image: 'young5.bmp'},
+            {image: 'young6.bmp'},
 			], 
 			//Stimulus css
 			stimulusCss : {color:'#31940F','font-size':'1.8em'}
@@ -79,7 +79,7 @@ define(['pipAPI', 'https://cdn.jsdelivr.net/gh/baranan/minno-tasks@0.*/IAT/qualt
 		},
 
 		base_url : {//Where are your images at?
-			image : 'https://baranan.github.io/minno-tasks/images/'
+			image : 'https://cotton-moon.github.io/minno-tasks/IAT/qualtrics/OneDrive_1_10-07-2025'
 		} 
 	});
 });
